@@ -1,0 +1,7 @@
+type: 'data_hesai_6000'
+raw_label_path: '/media/jw11/jw13/data/hesai_data_6000_raw'
+label_file_tree: '*/annotations.json'
+pcd_file_tree : '*/data/*/*.pcd'
+root_path: '/media/jw11/jw13/data/hesai_data_6000_raw'
+save_path: '/media/jw11/jw13/data/nuscenes/hesai_6000/training'
+sensor_lib: ['velodyne','label_2']

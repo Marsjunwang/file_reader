@@ -1,0 +1,7 @@
+type: 'data_6187_all_label'
+raw_label_path: '/media/jw11/jw13/data/tecent_data_6187/label_raw'
+label_file_tree: '*/*.json'
+pcd_file_tree : '*/*.pcd'
+root_path: '/media/jw11/jw13/data/tecent_data_6187/data'
+save_path: '/home/jw11/converter_data_val'
+sensor_lib: ['velodyne','label_2','image_1','image_2','image_3','image_4']

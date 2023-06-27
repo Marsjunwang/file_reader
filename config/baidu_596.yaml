@@ -1,0 +1,7 @@
+type: 'baidu_596'
+raw_label_path: '/media/jw11/jw13/data/百度data/json_all'
+label_file_tree: '*.json'
+pcd_file_tree : '*.bin'
+root_path: '/media/jw11/jw13/data/百度data/bin_all'
+save_path: '/media/jw11/jw13/data/converter_data/baidu_596/training'
+sensor_lib: ['velodyne','label_2']

@@ -1,0 +1,7 @@
+type: 'baidu_40000'
+raw_label_path: '/media/jw11/jw13/data/PVB_fusion/m1-2'
+label_file_tree: '2023_2_27_12_39_51/workspace/data/new_save/subset-155-725*/point_cloud_3d/*.json'
+pcd_file_tree : '2023_2_27_12_39_51/workspace/data/new_save/subset-155-725*/velodyne_points/unde*.pcd'
+root_path: '/media/jw11/jw13/data/PVB_fusion/m1-2'
+save_path: '/media/jw11/jw13/data/converter_data/baidu_10000_test/training'
+sensor_lib: ['velodyne','label_2']
