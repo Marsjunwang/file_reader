@@ -1,0 +1,7 @@
+type: 'AT128_Sensebee'
+raw_label_path: '/media/jw11/jw11/AT128/GAC_L4_0503_new/gac_l4_2'
+root_path: '/media/jw11/jw11/AT128/GAC_L4_0503_new/gac_l4_2'
+label_file_tree: '*/*/sensebee_label/*.json'
+pcd_file_tree : '*/*/lidar/car_center/*.pcd'
+save_path: '/media/jw11/jw11/AT128/AT128_0503/training'
+sensor_lib: ['label_2']

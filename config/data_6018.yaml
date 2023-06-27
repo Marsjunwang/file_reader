@@ -1,0 +1,7 @@
+type: 'data_6018'
+raw_label_path: 'D:/data/6018_frames_data/label_baidu_0610_6018'
+label_file_tree: '*/*/*.json'
+root_path: 'D:/data/6018_frames_data/raw_data'
+pcd_file_tree : '*/*.pcd'
+save_path: 'D:/converter_data'
+sensor_lib: ['velodyne','label_2','image_1','image_2','image_3','image_4']

@@ -1,0 +1,7 @@
+type: 'shangtang_500'
+raw_label_path: '/media/jw11/jw13/data/PVB_fusion/m1-2'
+label_file_tree: '*/workspace/data/new_save/*/point_cloud_3d/*.json'
+pcd_file_tree : '*/workspace/data/new_save/*/velodyne_points/unde*.pcd'
+root_path: '/media/jw11/jw13/data/PVB_fusion/m1-2'
+save_path: '/media/jw11/jw13/data/PVB_fusion/baidu_10000/training'
+sensor_lib: ['velodyne','label_2']
