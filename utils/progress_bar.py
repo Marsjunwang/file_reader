@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import contextlib
 import enum
 import math
@@ -179,7 +178,6 @@ class ProgressBar:
         else:
             print(prog_str + '   ', end='\r')
         self._current_time = time.time()
-=======
 import contextlib
 import enum
 import math
@@ -360,4 +358,3 @@ class ProgressBar:
         else:
             print(prog_str + '   ', end='\r')
         self._current_time = time.time()
->>>>>>> 938d4d8babe9880d749e989164c980a8669e2123

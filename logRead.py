@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from turtle import distance
 import numpy as np
 import os
@@ -44,6 +43,8 @@ for id,frame in enumerate(dict_list):
 #dict_list[0]['header']
 #dict_keys(['ClientID', 'InterfaceVer', 'Length', 'MessageType', 'MethodID', 'ProtocolVer', 'ReturnCode', 'ServiceID', 'SessionID'])
 =======
+=======
+>>>>>>> Stashed changes
 from turtle import distance
 import numpy as np
 import os
@@ -88,4 +89,7 @@ for id,frame in enumerate(dict_list):
 # 'Radial_Distance', 'Relative_Velocity', 'Reserved1', 'Signal_To_Noise_Ratio'])
 #dict_list[0]['header']
 #dict_keys(['ClientID', 'InterfaceVer', 'Length', 'MessageType', 'MethodID', 'ProtocolVer', 'ReturnCode', 'ServiceID', 'SessionID'])
+<<<<<<< Updated upstream
 >>>>>>> 938d4d8babe9880d749e989164c980a8669e2123
+=======
+>>>>>>> Stashed changes
