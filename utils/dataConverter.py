@@ -1,6 +1,5 @@
 from curses.ascii import isdigit
 import os 
-import glob
 from pathlib import Path
 from tracemalloc import start
 
