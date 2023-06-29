@@ -11,8 +11,6 @@ import shutil
 from PIL import Image
 import json
 import time
-
-from tqdm import tqdm
 import concurrent.futures as futures
 from tqdm.contrib.concurrent import process_map
 import multiprocessing
@@ -22,6 +20,7 @@ import warnings
 from easydict import EasyDict
 import struct
 import lzf
+
 
 numpy_pcd_type_mappings = [(np.dtype('float32'), ('F', 4)),
                            (np.dtype('float64'), ('F', 8)),
@@ -35,6 +34,14 @@ numpy_pcd_type_mappings = [(np.dtype('float32'), ('F', 4)),
 numpy_type_to_pcd_type = dict(numpy_pcd_type_mappings)
 pcd_type_to_numpy_type = dict((q, p) for (p, q) in numpy_pcd_type_mappings)
 
+name_mapping_xj3_6M1 = {
+    'Car':'vehicle',
+    'Cyclist':'bicycle',
+    'Truck':'big_vehicle',
+    'Pedestrian':'pedestrian',
+    'Other':'ignore'
+}
+
 class RawDataReader():
     def __init__(self,
                  raw_data_type = None,
@@ -43,7 +50,9 @@ class RawDataReader():
                  labe_path = '/media/jw11/jw11/data/6018_frames_data/label_baidu_0610_6018/PCDx1_CAMx4_1',
                  label_file_tree = None,
                  pcd_file_tree = None,
-                 sensor_lib = None):
+                 calib_file_tree = None,
+                 sensor_lib = None,
+                 data_format = 'KITTI'):
         if not (os.path.exists(root_path) and os.path.exists(labe_path)):
             raise ValueError("Input path is Empty!!!")
         self.raw_data_type = raw_data_type
@@ -52,7 +61,11 @@ class RawDataReader():
         self.label_path = labe_path
         self.all_sensor_path = self.create_kitti_tree(save_path,sensor_lib)
         self.label_list = self.label_reader_new(labe_path,label_file_tree)
+        
+        self.calib_list = [(Path(i).parent.parent / calib_file_tree).resolve() for i in self.label_list] if calib_file_tree \
+            else None
         self.pc_hash_table = self.pc_table(root_path,pcd_file_tree)
+        self.data_format = data_format
         
     def data_reader(self):
         root_path = self.root_path
@@ -157,7 +170,7 @@ class RawDataReader():
         for dti in range(len(dtype)):
             dt = dtype[dti]
             bytes = dt.itemsize * metadata['width']
-            column = np.fromstring(buf[ix:(ix+bytes)], dt)
+            column = np.frombuffer(buf[ix:(ix+bytes)], dt)
             pc_data[dtype.names[dti]] = column
             ix += bytes
         return pc_data
@@ -193,10 +206,6 @@ class RawDataReader():
         #         if line.startswith('DATA'):
         #             data_buffer =True
         return pc_data
-    
-    def bin_reader(self,pcd_path):
-        return np.fromfile(pcd_path,dtype=np.float32).reshape(-1,4)
-        
         
 
     def label_reader(raw_label_path):
@@ -206,8 +215,10 @@ class RawDataReader():
             return glob.glob(os.path.join(raw_label_path,'*.json'))
         
     # @staticmethod
-    def label_reader_new(self,root_path, file_tree):
-        return glob.glob(str(Path(root_path) / file_tree))
+    def label_reader_new(self,root_path, label_file_tree=None):
+
+        return glob.glob(str(Path(root_path) / label_file_tree))
+        
     
     
     # @staticmethod  
@@ -259,10 +270,22 @@ class RawDataReader():
         
         jpg_path = info_path
         if not os.path.exists(jpg_path):
-                raise ValueError("The frame image1 is misssing!")
+                raise ValueError("The frame image is misssing!")
         image_2 = jpg_reader(jpg_path)
         png_path = os.path.join(save_path,'{}.png'.format(filename))
         image_2.save(r'{}'.format(png_path))
+        
+    def image_reader_v2(info_path,save_path,filename):
+        jpg_path = info_path
+        png_path = os.path.join(save_path,'{}.jpg'.format(filename))
+        if not os.path.exists(jpg_path):
+                raise ValueError("The frame image is misssing!")
+
+        with open(jpg_path,'rb') as fp1, open(png_path,'wb') as fp2:
+            b1 = fp1.read()
+            fp2.write(b1)
+            
+
         
     def json2txt(js,save_path):
         lis_st = []
@@ -295,105 +318,23 @@ class RawDataReader():
         f_w = open(save_path, 'w')
         f_w.writelines(lis_st)
         f_w.close()
-
-
-def reader_2_writer(index):
-    
-            label_file = os.path.basename(label_list[index])
-            time_stamp = os.path.splitext(os.path.basename(label_file))[0]
-            filename = str(index).zfill(6)
-            
-            # 1.points reader
-            pcd_path = pc_hash_table[time_stamp]
-            
-            
-            label_path = label_list[index]
-            label = json_reader(label_path)
-          
-    
-            if not os.path.exists(pcd_path):
-                raise ValueError(f"The frame {time_stamp} pointcloud is missing!")
-                # print(f"The frame {time_stamp} pointcloud is missing!")
-                return
-            points = DataReader.bin_reader(pcd_path=pcd_path)
-            # points= RawDataReader.raw_to_kitti_calib(points)
-            
-            points.tofile(os.path.join(all_sensor_path['velodyne'],'{}.bin'.format(filename)))
-
-            # # 2.Image reader
-            # jpg_path = os.path.join(cfg.root_path,label_list[index].split('/')[-3],'{}_cam2.jpg'.format(time_stamp))
-            # image_reader(jpg_path,all_sensor_path['image_2'],filename)
-            
-            # jpg_path = os.path.join(cfg.root_path,label_list[index].split('/')[-3],'{}_cam1.jpg'.format(time_stamp))
-            # image_reader(info_path = jpg_path,save_path = all_sensor_path['image_1'],filename = filename)
-            
-            # jpg_path = os.path.join(cfg.root_path,label_list[index].split('/')[-3],'{}_cam3.jpg'.format(time_stamp))
-            # image_reader(jpg_path,all_sensor_path['image_3'],filename)
-            
-            # jpg_path = os.path.join(cfg.root_path,label_list[index].split('/')[-3],'{}_cam4.jpg'.format(time_stamp))
-            # image_reader(jpg_path,all_sensor_path['image_4'],filename)
-            
-            #3.Label reader
-
-            
-            label_save_path = os.path.join(all_sensor_path['label_2'], '{}.txt'.format(filename))
-
-            RawDataReader.json2txt_60(label,label_save_path)
-            
-
-
-from config.config_load import cfg, cfg_from_yaml_file
-config_path = '/media/jw11/jw13/a_project_/file_reader/config/baidu_1264.yaml'
-cfg = cfg_from_yaml_file(config_path, cfg)
-
-
-raw_data_type = cfg.type
-
-DataReader=RawDataReader(raw_data_type=raw_data_type,
-                    root_path=cfg.root_path,
-                    save_path=cfg.save_path,
-                    labe_path=cfg.raw_label_path,
-                    label_file_tree = cfg.label_file_tree,
-                    pcd_file_tree = cfg.pcd_file_tree,
-                    sensor_lib = cfg.sensor_lib)
-all_sensor_path = DataReader.all_sensor_path
-label_list = DataReader.label_list
-pc_hash_table = DataReader.pc_hash_table
-def timestamp(x):
-        return int(''.join([st for st in os.path.basename(x) if st.isdigit()]))
-if raw_data_type == 'data_hesai_6000':
-    label_list.sort(key=lambda x:int(''.join([i for i in x.split('/')[-2] if i.isdigit()])))
-else:
-    label_list.sort(key=lambda x:timestamp(x))
-image_ids = [id for id in range(len(label_list))]
-image_reader = RawDataReader.image_reader
-json_reader = RawDataReader.json_reader
-name_mapping_xj3_6M1 = {
-    'Car':'vehicle',
-    'Cyclist':'bicycle',
-    'Truck':'big_vehicle',
-    'Pedestrian':'pedestrian',
-    'Other':'ignore'
-}
-
-
-def main():
-    
-    ## test
-    # global start_idx
-    # start_idx = 0
-    for i in tqdm(image_ids):
-        # if i > 200:
-        #     break
-        reader_2_writer(i)
         
-    num_workers = 4
-        
-    # def run(f, my_iter):
-    #     with futures.ProcessPoolExecutor(num_workers) as executor:
-    #         list(tqdm(executor.map(f, my_iter), total=len(my_iter)))
-    # run(reader_2_writer,image_ids)   
-
-if __name__ == "__main__":
-    main()  
-
+    def json2txt_fusion(js,save_path):
+        lis_st = []
+        for lb in js['step_1']['result']:
+            try:
+                st = name_mapping_xj3_6M1[lb['attribute']]+' 0'*7+' '+\
+                    str(lb['width'])+' '+\
+                    str(lb['height'])+' '+\
+                    str(lb['depth'])+' '+\
+                    str(lb['center']['x'])+' '+\
+                    str(lb['center']['y'])+' '+\
+                    str(lb['center']['z'])+' '+\
+                    str(lb['rotation']+ np.pi / 2)+'\n'
+                lis_st.append(st)
+            except:
+                print(f'The wrong object is {lb}')
+                continue
+        f_w = open(save_path, 'w')
+        f_w.writelines(lis_st)
+        f_w.close()

@@ -384,7 +384,7 @@ def reader_2_writer(index):
     
     
 
-from config.config_load import cfg, cfg_from_yaml_file
+from utils.config_load import cfg, cfg_from_yaml_file
 config_path = '/media/jw11/jw13/a_project_/file_reader/config/data_hesai_6000.yaml'
 cfg = cfg_from_yaml_file(config_path, cfg)
 
