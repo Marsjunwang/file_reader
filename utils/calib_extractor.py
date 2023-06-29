@@ -25,29 +25,8 @@ class CalibExtractor:
         
         if not osp.exists(targ_dir):
             os.makedirs(targ_dir)
-        if data_format == 'KITTI':
-            sensor_names_map = {
-                'front-wide':'P2', 
-                'left-backward':'P1', 
-                'left-forward':'P0', 
-                'right-forward':'P3'}
-            save_path = targ_dir
-            if not osp.exists(save_path):
-                    os.makedirs(save_path) 
-            
-            st = ''
-            for i,name in enumerate(sensor_names):
-                if name in sensor_names_map.keys():
-                    name = sensor_names_map[name]
-                    R = self.target_calib[i]['R']
-                    P = self.target_calib[i]['P']
-                    T = self.target_calib[i]['T']
-                    P = name + ':' + ' '  + ' '.join(map(str, [item for sublist in P for item in sublist])) + '\n'
-                    R = name + '_R' + ':' + ' '  + ' '.join(map(str, [item for sublist in R for item in sublist])) + '\n'
-                    T = name + '_T' + ':' + ' '  + ' '.join(map(str, [item for sublist in T for item in sublist])) + '\n'
-                    st += P + R + T
-            with open(targ_dir + '/' + filename,'w') as f:
-                f.write(st)        
+        if data_format == 'xj3_to_kitti':
+            self.xj3_to_kitti_writer()
         elif data_format == 'SenseTime':
             for i,name in enumerate(sensor_names):
                 save_path = osp.join(targ_dir,name)
@@ -60,7 +39,20 @@ class CalibExtractor:
         else:
             raise ValueError(f'Data format:{data_format} is not support. Only support KITTI and SenseTime')
         
- 
+    def xj3_to_kitti_writer(self):
+        save_path = self.target_pth
+        st = ''
+        for calib in self.target_calib:
+            R = calib['R']
+            P = calib['P']
+            T = calib['T']
+            name = calib['calName']
+            P = name + '_P' + ':' + ' '  + ' '.join(map(str, [item for sublist in P for item in sublist])) + '\n'
+            R = name + '_R' + ':' + ' '  + ' '.join(map(str, [item for sublist in R for item in sublist])) + '\n'
+            T = name + '_T' + ':' + ' '  + ' '.join(map(str, [item for sublist in T for item in sublist])) + '\n'
+            st += P + R + T
+            with open(save_path + '/' + self.filename,'w') as f:
+                f.write(st)     
     @staticmethod    
     def txtInput(pth):
         if not osp.exists(pth):

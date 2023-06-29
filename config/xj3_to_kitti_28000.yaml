@@ -3,5 +3,6 @@ root_path: '/media/jw11/54E2ACF3E2ACDA8E/m1_3d_new'
 label_file_tree: '*/workspace/data/new_save/*/point_cloud_3d/*.json'
 pcd_file_tree : '*/workspace/data/new_save/*/velodyne_points/unde*.pcd'
 calib_file_tree: 'original_data/params/params-to-sensetime.txt' # ADD label_path.parent.parent
+raw_label_path: False
 save_path: '/media/jw11/54E2ACF3E2ACDA8E/baidu_test/training'
-sensor_lib: ['velodyne','label_2','image_0','image_1','image_2','image_3','calib']
+sensor_lib: ['velodyne','label_2','image_front-narrow','image_front-wide','image_left-forward','image_left-backward','image_right-forward','image_right-backward','calib']

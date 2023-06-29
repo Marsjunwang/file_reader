@@ -2,15 +2,13 @@ from curses.ascii import isdigit
 import os 
 from pathlib import Path
 from tracemalloc import start
-
-# from cv2 import split
+import glob
 from utils.progress_bar import progress_bar_iter as prog_bar
 import numpy as np
 import shutil
 from PIL import Image
 import json
 import time
-import concurrent.futures as futures
 from tqdm.contrib.concurrent import process_map
 import multiprocessing
 from functools import partial
@@ -33,7 +31,7 @@ numpy_pcd_type_mappings = [(np.dtype('float32'), ('F', 4)),
 numpy_type_to_pcd_type = dict(numpy_pcd_type_mappings)
 pcd_type_to_numpy_type = dict((q, p) for (p, q) in numpy_pcd_type_mappings)
 
-name_mapping_xj3_6M1 = {
+name_mapping_xj3_to_kitti = {
     'Car':'vehicle',
     'Cyclist':'bicycle',
     'Truck':'big_vehicle',
@@ -43,28 +41,28 @@ name_mapping_xj3_6M1 = {
 
 class RawDataReader():
     def __init__(self,
-                 raw_data_type = None,
-                 root_path = '/media/jw11/jw11/data/6018_frames_data/raw_data/PCDx1_CAMx4_1',
-                 save_path = '/media/jw11/jw11/data/converter_data',
-                 labe_path = '/media/jw11/jw11/data/6018_frames_data/label_baidu_0610_6018/PCDx1_CAMx4_1',
+                 cvt_type,
+                 root_path,
+                 save_path,
+                 labe_path = None,
                  label_file_tree = None,
                  pcd_file_tree = None,
                  calib_file_tree = None,
-                 sensor_lib = None,
-                 data_format = 'KITTI'):
-        if not (os.path.exists(root_path) and os.path.exists(labe_path)):
+                 sensor_lib = None):
+        if not os.path.exists(root_path) or not os.path.exists(save_path):
             raise ValueError("Input path is Empty!!!")
-        self.raw_data_type = raw_data_type
+        self.cvt_type = cvt_type
+        if cvt_type == 'xj3_to_kitti':
+            RawDataReader.name_mapping = name_mapping_xj3_to_kitti
         self.root_path = root_path
         self.save_path = save_path
-        self.label_path = labe_path
+        self.label_path = root_path
         self.all_sensor_path = self.create_kitti_tree(save_path,sensor_lib)
-        self.label_list = self.label_reader_new(labe_path,label_file_tree)
+        self.label_list = self.label_reader_new(self.label_path,label_file_tree)
         
         self.calib_list = [(Path(i).parent.parent / calib_file_tree).resolve() for i in self.label_list] if calib_file_tree \
             else None
         self.pc_hash_table = self.pc_table(root_path,pcd_file_tree)
-        self.data_format = data_format
         
     def data_reader(self):
         root_path = self.root_path
@@ -73,7 +71,6 @@ class RawDataReader():
         data_list = glob.glob(str(root_path / '*{}'.format(ext))) if root_path.is_dir() else [root_path]
         return data_list
     
-
     def parse_header(self,lines):
         """ Parse header of PCD files.
         """
@@ -134,6 +131,7 @@ class RawDataReader():
         dtype = np.dtype({'names':tuple(fieldnames),
                  'formats':tuple(typenames)})
         return dtype  
+    
     def parse_ascii_pc_data(self,f, dtype, metadata):
         """ Use numpy to parse ascii pointcloud data.
         """
@@ -192,39 +190,23 @@ class RawDataReader():
                 pc_data = self.parse_binary_pc_data(f, dtype, metadata)
             elif metadata['data'] == 'binary_compressed':
                 pc_data = self.parse_binary_compressed_pc_data(f, dtype, metadata)
-        # meta =[]
-        # points = []
-        # data_buffer = False
-        # with open(pcd_path, 'rb') as f:
-        #     for line in f:
-        #         line = line.strip().decode('utf-8')
-        #         meta.append(line)
-        #         if data_buffer:
-        #             point = list(map(float, [x for x in line.split(' ')]))
-        #             points.append(point)
-        #         if line.startswith('DATA'):
-        #             data_buffer =True
         return pc_data
         
-
     def label_reader(raw_label_path):
-        if raw_data_type == 'data_6018':
+        if cvt_type == 'data_6018':
             return glob.glob(os.path.join(raw_label_path,'*','*','*.json'))
-        elif raw_data_type == 'data_60' or raw_data_type == 'data_6187':
+        elif cvt_type == 'data_60' or cvt_type == 'data_6187':
             return glob.glob(os.path.join(raw_label_path,'*.json'))
         
     # @staticmethod
     def label_reader_new(self,root_path, label_file_tree=None):
-
         return glob.glob(str(Path(root_path) / label_file_tree))
         
-    
-    
     # @staticmethod  
     def pc_table(self,root_path, file_tree):
         all_pc_paths = self.label_reader_new(root_path, file_tree)
         pc = EasyDict({})
-        if self.raw_data_type == "data_hesai_6000":
+        if self.cvt_type == "data_hesai_6000":
             for pc_path in all_pc_paths:
                 pc_path_list = pc_path.split('/')
                 if pc_path_list[-4] not in pc.keys():
@@ -274,18 +256,16 @@ class RawDataReader():
         png_path = os.path.join(save_path,'{}.png'.format(filename))
         image_2.save(r'{}'.format(png_path))
         
-    def image_reader_v2(info_path,save_path,filename):
+    def image_reader_v2(info_path, save_path, filename):
         jpg_path = info_path
         png_path = os.path.join(save_path,'{}.jpg'.format(filename))
         if not os.path.exists(jpg_path):
-                raise ValueError("The frame image is misssing!")
+            raise ValueError("The frame image is misssing!")
 
         with open(jpg_path,'rb') as fp1, open(png_path,'wb') as fp2:
             b1 = fp1.read()
             fp2.write(b1)
             
-
-        
     def json2txt(js,save_path):
         lis_st = []
         for lb in js['labels']:
@@ -318,18 +298,18 @@ class RawDataReader():
         f_w.writelines(lis_st)
         f_w.close()
         
-    def json2txt_fusion(js,save_path):
+    def json2txt(js,save_path):
         lis_st = []
         for lb in js['step_1']['result']:
             try:
-                st = name_mapping_xj3_6M1[lb['attribute']]+' 0'*7+' '+\
+                st = RawDataReader.name_mapping[lb['attribute']]+' 0'*7+' '+\
                     str(lb['width'])+' '+\
                     str(lb['height'])+' '+\
                     str(lb['depth'])+' '+\
                     str(lb['center']['x'])+' '+\
                     str(lb['center']['y'])+' '+\
                     str(lb['center']['z'])+' '+\
-                    str(lb['rotation']+ np.pi / 2)+'\n'
+                    str(lb['rotation'])+'\n'
                 lis_st.append(st)
             except:
                 print(f'The wrong object is {lb}')

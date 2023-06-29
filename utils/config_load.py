@@ -25,6 +25,7 @@ def cfg_from_yaml_file(cfg_file, config):
         merge_new_config(config=config, new_config=new_config)
 
     return config
+
 cfg = EasyDict()
 cfg.ROOT_DIR = (Path(__file__).resolve().parent / '../').resolve()
 cfg.LOCAL_RANK = 0
