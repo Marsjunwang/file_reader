@@ -36,22 +36,22 @@ def reader_2_writer(index):
 
     # 2.Image reader
     jpg_path = image_path(label_path.split('/point_cloud_3d')[0],'images/front-narrow')
-    image_reader(jpg_path,all_sensor_path['image_front-narrow'],filename)
+    image_reader(jpg_path,all_sensor_path['image_front_narrow'],filename)
     
     jpg_path = image_path(label_path.split('/point_cloud_3d')[0],'images/front-wide')
-    image_reader(jpg_path,all_sensor_path['image_front-wide'],filename)
+    image_reader(jpg_path,all_sensor_path['image_front_wide'],filename)
     
     jpg_path = image_path(label_path.split('/point_cloud_3d')[0],'images/left-forward')
-    image_reader(jpg_path,all_sensor_path['image_left-forward'],filename)
+    image_reader(jpg_path,all_sensor_path['image_left_forward'],filename)
     
     jpg_path = image_path(label_path.split('/point_cloud_3d')[0],'images/left-backward')
-    image_reader(jpg_path,all_sensor_path['image_left-backward'],filename)
+    image_reader(jpg_path,all_sensor_path['image_left_backward'],filename)
     
     jpg_path = image_path(label_path.split('/point_cloud_3d')[0],'images/right-forward')
-    image_reader(jpg_path,all_sensor_path['image_right-forward'],filename)
+    image_reader(jpg_path,all_sensor_path['image_right_forward'],filename)
     
     jpg_path = image_path(label_path.split('/point_cloud_3d')[0],'images/right-backward')
-    image_reader(jpg_path,all_sensor_path['image_right-backward'],filename)
+    image_reader(jpg_path,all_sensor_path['image_right_backward'],filename)
     if DEBUG:
         img_time = time.time()
         print(f'Image time is {img_time - pcd_time}')
@@ -62,11 +62,16 @@ def reader_2_writer(index):
     if DEBUG:
         lab_time = time.time()
         print(f'Image time is {lab_time - img_time}')
-        
+    
     # 4.Calib reader
     calib_path = calib_list[index]
     calib_targ_pth = os.path.join(all_sensor_path['calib'])
-    CalibExtractor(src_pth=calib_path,targ_dir=calib_targ_pth,filename='{}.txt'.format(filename),data_format=DataReader.cvt_type)
+    try:
+        CalibExtractor(src_pth=calib_path,targ_dir=calib_targ_pth,filename=filename,undistort_image=False,data_format=DataReader.cvt_type)
+    except:
+        with open(save_path+'/error_new.txt','a') as f:
+            f.write(str(index) + '\n')
+        return 
     if DEBUG:
         cal_time = time.time()
         print(f'Image time is {cal_time - lab_time}')
@@ -94,6 +99,10 @@ if __name__ == "__main__":
     all_sensor_path = DataReader.all_sensor_path
     label_list = DataReader.label_list
     calib_list = DataReader.calib_list
+    error_index_pth = save_path+'/error.txt'
+    error_index = [int(x.strip()) for x in open(error_index_pth).readlines()] 
+    label_list = [v for i,v in enumerate(label_list) if i not in error_index]
+    calib_list = [v for i,v in enumerate(calib_list) if i not in error_index]
     pc_hash_table = DataReader.pc_hash_table
     data_len = len(label_list)
     image_ids = [id for id in range(data_len)]
@@ -102,11 +111,9 @@ if __name__ == "__main__":
     
     # 3.Data Converter
     for i in tqdm(image_ids):
-        if i > 30:
-            break
         reader_2_writer(i)
         
-    # num_workers = 4
+    # num_workers = 8
     # def run(f, my_iter):
     #     with futures.ProcessPoolExecutor(num_workers) as executor:
     #         list(tqdm(executor.map(f, my_iter), total=len(my_iter)))

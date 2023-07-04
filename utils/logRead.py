@@ -42,9 +42,7 @@ for id,frame in enumerate(dict_list):
 # 'Radial_Distance', 'Relative_Velocity', 'Reserved1', 'Signal_To_Noise_Ratio'])
 #dict_list[0]['header']
 #dict_keys(['ClientID', 'InterfaceVer', 'Length', 'MessageType', 'MethodID', 'ProtocolVer', 'ReturnCode', 'ServiceID', 'SessionID'])
-=======
-=======
->>>>>>> Stashed changes
+
 from turtle import distance
 import numpy as np
 import os

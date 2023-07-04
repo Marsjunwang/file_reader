@@ -47,11 +47,11 @@ class CalibExtractor:
             P = calib['P']
             T = calib['T']
             name = calib['calName']
-            P = name + '_P' + ':' + ' '  + ' '.join(map(str, [item for sublist in P for item in sublist])) + '\n'
-            R = name + '_R' + ':' + ' '  + ' '.join(map(str, [item for sublist in R for item in sublist])) + '\n'
-            T = name + '_T' + ':' + ' '  + ' '.join(map(str, [item for sublist in T for item in sublist])) + '\n'
+            P = name.replace('-','_') + '_P' + ':' + ' '  + ' '.join(map(str, [item for sublist in P for item in sublist])) + '\n'
+            R = name.replace('-','_') + '_R' + ':' + ' '  + ' '.join(map(str, [item for sublist in R for item in sublist])) + '\n'
+            T = name.replace('-','_') + '_T' + ':' + ' '  + ' '.join(map(str, [item for sublist in T for item in sublist])) + '\n'
             st += P + R + T
-            with open(save_path + '/' + self.filename,'w') as f:
+            with open(save_path + '/' + f'{self.filename}.txt','w') as f:
                 f.write(st)     
     @staticmethod    
     def txtInput(pth):
@@ -62,8 +62,8 @@ class CalibExtractor:
         
     @staticmethod    
     def jsonOutput(val, pth):
-        # if not osp.exists(pth):
-        #     raise ValueError(f'The path {pth} is not existing!')
+        if not osp.exists(pth):
+            raise ValueError(f'The path {pth} is not existing!')
         with open(pth, 'w', encoding='utf-8') as f:
             json.dump(val, f, ensure_ascii=False, indent=4)
         
@@ -78,6 +78,7 @@ class CalibExtractor:
             if calib[0] == '#':
                 continue
             elif calib[0][:5] == 'calib':
+                calib = calib[0].split(':') + calib[1:] if calib[0][-1] != ':' else calib
                 calib_sencor = calib[0].split('_')[1]
                 calib_RT = [float(v) for v in calib[1:]]
                 sensor_name.append(calib_sencor)
@@ -183,21 +184,19 @@ class CalibExtractor:
     
     def calibEncodeUndistort(self,sensor_name, RTs, amend_matrixs, calib_cam2imgs):
         target_calib = []
-        
-        
         for i in range(len(sensor_name)):
             filename = self.filename + '.jpg'
-            sensor_path = osp.join(osp.dirname(self.target_pth), 'image', sensor_name[i], filename)
-            sensor_path_targ = osp.join(osp.dirname(self.target_pth), 'image', sensor_name[i])
-            if not osp.exists(sensor_path_targ):
-                os.makedirs(sensor_path_targ)
-            sensor_path_targ = sensor_path_targ + '/' + filename
+            sensor_path = osp.join(osp.dirname(self.target_pth), 'image_'+sensor_name[i].replace('-','_'), filename)
+            # sensor_path_targ = osp.join(osp.dirname(self.target_pth), sensor_name[i])
+            # if not osp.exists(sensor_path_targ):
+            #     os.makedirs(sensor_path_targ)
+            # sensor_path_targ = sensor_path_targ + '/' + filename
             
             img = cv2.imread(sensor_path)
             self.camInstrinc(calib_cam2imgs[i])
             undistorted_img, new_camera_matrix = CalibExtractor.undistort_image(img, self.camera_matrix,np.array(amend_matrixs[i]))
             os.remove(sensor_path)
-            cv2.imwrite(sensor_path_targ, undistorted_img)
+            cv2.imwrite(sensor_path, undistorted_img)
             
             calib = {
                 'calName':sensor_name[i],
@@ -235,12 +234,6 @@ class CalibExtractor:
         tail = np.zeros((3,1))
         new_camera_matrix = np.concatenate((new_camera_matrix, tail), axis=1)
         
-        # h, w = img.shape[:2]
-        # # new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist_coeffs, (w, h), 1, (w, h))
-        # undistorted_img = cv2.undistort(img, camera_matrix, dist_coeffs)
-        # # undistorted_img = undistorted_img[y:y+h, x:x+w]
-        # tail = np.zeros((3,1))
-        # new_camera_matrix = np.concatenate((camera_matrix, tail), axis=1)
         return undistorted_img, new_camera_matrix.tolist()
         
 

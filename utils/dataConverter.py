@@ -49,7 +49,7 @@ class RawDataReader():
                  pcd_file_tree = None,
                  calib_file_tree = None,
                  sensor_lib = None):
-        if not os.path.exists(root_path) or not os.path.exists(save_path):
+        if not os.path.exists(root_path):
             raise ValueError("Input path is Empty!!!")
         self.cvt_type = cvt_type
         if cvt_type == 'xj3_to_kitti':
